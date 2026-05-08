@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0604">
+<title>De Drakenrol</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg-deep: #07050a;
+    --bg-mid: #1a0d10;
+    --gold-bright: #ffe79a;
+    --gold: #e0b34c;
+    --gold-mid: #b88827;
+    --gold-deep: #6b4612;
+    --gold-shadow: #2c1c06;
+    --red: #a31e1e;
+    --red-deep: #4a0a0a;
+  }
+
+  html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: 'Cormorant Garamond', 'Georgia', serif;
+    color: var(--gold);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+
+  .scene {
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 90% 60% at 50% 40%, rgba(60, 30, 12, 0.6) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 80% at 50% 100%, rgba(120, 50, 20, 0.25) 0%, transparent 60%),
+      radial-gradient(ellipse 100% 100% at 50% 50%, var(--bg-mid) 0%, var(--bg-deep) 60%, #000 100%);
+    z-index: 0;
+  }
+
+  .scene::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 15% 80%, rgba(255, 200, 120, 0.04) 0%, transparent 30%),
+      radial-gradient(circle at 85% 20%, rgba(200, 80, 40, 0.05) 0%, transparent 35%);
+    animation: drift 18s ease-in-out infinite;
+  }
+
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0); opacity: 0.6; }
+    50% { transform: translate(20px, -10px); opacity: 1; }
+  }
+
+  .scene::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.4 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.5'/></svg>");
+    opacity: 0.18;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+
+  .stage {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    padding: 24px;
+  }
+
+  .scroll {
+    position: relative;
+    width: min(86vw, 360px);
+    transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .scroll.closed { cursor: pointer; animation: float 4s ease-in-out infinite; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .halo {
+    position: absolute;
+    inset: -120px;
+    background: radial-gradient(ellipse at center, rgba(255, 200, 100, 0.18) 0%, rgba(255, 150, 80, 0.06) 30%, transparent 65%);
+    pointer-events: none;
+    z-index: -1;
+    transition: opacity 2s ease, inset 2s ease;
+  }
+
+  .scroll.open .halo { opacity: 1.4; inset: -180px; }
+
+  .cap { position: relative; width: 100%; height: 64px; z-index: 3; }
+
+  .cap-rod {
+    position: absolute;
+    left: -8px; right: -8px; top: 14px; bottom: 14px;
+    background:
+      linear-gradient(180deg,
+        var(--gold-shadow) 0%, var(--gold-mid) 12%, var(--gold-bright) 30%,
+        var(--gold) 48%, var(--gold-bright) 60%, var(--gold-mid) 80%, var(--gold-shadow) 100%);
+    border-radius: 6px;
+    box-shadow:
+      inset 0 -3px 6px rgba(0,0,0,0.4),
+      inset 0 2px 3px rgba(255, 240, 180, 0.6),
+      0 6px 18px rgba(255, 180, 60, 0.25);
+  }
+
+  .knob {
+    position: absolute;
+    width: 38px; height: 38px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 35% 30%,
+        var(--gold-bright) 0%, var(--gold) 30%, var(--gold-mid) 60%, var(--gold-deep) 100%);
+    box-shadow:
+      inset -3px -4px 8px rgba(0,0,0,0.5),
+      inset 2px 2px 4px rgba(255, 240, 180, 0.7),
+      0 4px 12px rgba(0,0,0,0.5),
+      0 0 16px rgba(255, 180, 60, 0.3);
+    z-index: 4;
+  }
+
+  .knob.left { left: -22px; }
+  .knob.right { right: -22px; }
+
+  .knob::after {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, var(--red) 0%, var(--red-deep) 70%, #1a0303 100%);
+    box-shadow: inset 0 -2px 4px rgba(0,0,0,0.6), inset 1px 1px 2px rgba(255, 100, 100, 0.4);
+  }
+
+  .cap-rod::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 30px; right: 30px;
+    height: 4px;
+    transform: translateY(-50%);
+    background: linear-gradient(90deg, transparent, var(--red), var(--red-deep), var(--red), transparent);
+    box-shadow: 0 0 8px rgba(163, 30, 30, 0.6);
+  }
+
+  .body-wrap {
+    position: relative;
+    width: 100%;
+    height: 32px;
+    overflow: hidden;
+    transition: height 1.6s cubic-bezier(0.65, 0.02, 0.3, 1);
+    margin: -10px 0;
+    z-index: 2;
+  }
+
+  .scroll.open .body-wrap { height: 62vh; max-height: 560px; }
+
+  .body {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 50% 50%,
+        var(--gold-bright) 0%, var(--gold) 35%, var(--gold-mid) 75%, var(--gold-deep) 100%);
+    overflow: hidden;
+    box-shadow:
+      inset 0 8px 16px rgba(255, 230, 150, 0.5),
+      inset 0 -8px 16px rgba(80, 40, 0, 0.4),
+      inset 6px 0 14px rgba(60, 30, 0, 0.5),
+      inset -6px 0 14px rgba(60, 30, 0, 0.5);
+  }
+
+  .body::before, .body::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 14px;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  .body::before { left: 0; background: linear-gradient(90deg, var(--gold-shadow) 0%, transparent 100%); }
+  .body::after  { right: 0; background: linear-gradient(270deg, var(--gold-shadow) 0%, transparent 100%); }
+
+  .mirror {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+    filter: sepia(0.55) saturate(1.4) hue-rotate(-12deg) contrast(1.05) brightness(1.08);
+    mix-blend-mode: luminosity;
+    opacity: 0;
+    transition: opacity 1.4s ease;
+    z-index: 1;
+    background: transparent;
+  }
+
+  .scroll.open.cam-on .mirror { opacity: 0.92; }
+
+  .gleam {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(255, 240, 180, 0.45) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 100%, rgba(110, 60, 10, 0.7) 0%, transparent 60%),
+      linear-gradient(180deg, transparent 0%, transparent 70%, rgba(80, 40, 0, 0.4) 100%);
+    pointer-events: none;
+    z-index: 2;
+    mix-blend-mode: overlay;
+  }
+
+  .shimmer {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 40%;
+    left: -40%;
+    background: linear-gradient(110deg, transparent 30%, rgba(255, 245, 200, 0.4) 50%, transparent 70%);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .scroll.open.cam-on .shimmer {
+    animation: shimmerSweep 3s ease 0.8s 1 forwards;
+  }
+
+  @keyframes shimmerSweep {
+    0% { left: -40%; }
+    100% { left: 110%; }
+  }
+
+  .reveal {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 24px 20px 28px;
+    text-align: center;
+    z-index: 4;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1.4s ease 1.8s;
+  }
+
+  .scroll.open.cam-on .reveal { opacity: 1; }
+
+  .reveal-mark {
+    font-size: 10px;
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    color: rgba(50, 25, 0, 0.6);
+    margin-bottom: 6px;
+    padding-left: 0.5em;
+  }
+
+  .reveal-line {
+    font-size: clamp(20px, 5.5vw, 26px);
+    line-height: 1.25;
+    color: rgba(40, 18, 0, 0.85);
+    font-style: italic;
+    text-shadow: 0 1px 0 rgba(255, 240, 180, 0.6);
+    letter-spacing: 0.01em;
+  }
+
+  .hint {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -52px;
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0;
+    animation: hintFade 1.2s ease 0.6s forwards, hintPulse 2.4s ease-in-out 1.8s infinite;
+    white-space: nowrap;
+  }
+
+  @keyframes hintFade { to { opacity: 0.7; } }
+  @keyframes hintPulse {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 0.85; }
+  }
+
+  .scroll.opening .hint, .scroll.open .hint {
+    opacity: 0 !important;
+    animation: none;
+    transition: opacity 0.4s;
+  }
+
+  .ornament {
+    position: absolute;
+    width: 28px; height: 28px;
+    border: 1px solid rgba(80, 45, 0, 0.4);
+    z-index: 5;
+    opacity: 0;
+    transition: opacity 1.2s ease 1.6s;
+  }
+  .scroll.open .ornament { opacity: 1; }
+  .ornament.tl { top: 14px; left: 14px; border-right: none; border-bottom: none; }
+  .ornament.tr { top: 14px; right: 14px; border-left: none; border-bottom: none; }
+  .ornament.bl { bottom: 14px; left: 14px; border-right: none; border-top: none; }
+  .ornament.br { bottom: 14px; right: 14px; border-left: none; border-top: none; }
+
+  /* Status panel inside the scroll for permission / errors */
+  .status {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 30px 28px;
+    z-index: 6;
+    color: rgba(40, 18, 0, 0.85);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+  }
+
+  .scroll.open.cam-pending .status,
+  .scroll.open.cam-error   .status,
+  .scroll.open.cam-insecure .status {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .status-mark {
+    font-size: 10px;
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    color: rgba(50, 25, 0, 0.55);
+    margin-bottom: 14px;
+    padding-left: 0.5em;
+  }
+
+  .status-msg {
+    font-size: clamp(16px, 4.4vw, 19px);
+    line-height: 1.4;
+    font-style: italic;
+    margin-bottom: 22px;
+    max-width: 280px;
+    text-shadow: 0 1px 0 rgba(255, 240, 180, 0.5);
+  }
+
+  .retry-btn {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid rgba(60, 30, 0, 0.6);
+    background: linear-gradient(180deg, rgba(255, 230, 160, 0.6), rgba(180, 130, 50, 0.5));
+    color: rgba(40, 18, 0, 0.95);
+    padding: 10px 22px;
+    font: inherit;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    cursor: pointer;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 245, 200, 0.6),
+      inset 0 -1px 0 rgba(60, 30, 0, 0.4),
+      0 2px 6px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .retry-btn:active {
+    transform: translateY(1px);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+  }
+</style>
+</head>
+<body>
+  <div class="scene"></div>
+
+  <div class="stage">
+    <div class="scroll closed" id="scroll">
+      <div class="halo"></div>
+
+      <div class="cap">
+        <div class="cap-rod"></div>
+        <div class="knob left"></div>
+        <div class="knob right"></div>
+      </div>
+
+      <div class="body-wrap">
+        <div class="body">
+          <video class="mirror" id="video" autoplay playsinline muted></video>
+          <div class="gleam"></div>
+          <div class="shimmer"></div>
+
+          <span class="ornament tl"></span>
+          <span class="ornament tr"></span>
+          <span class="ornament bl"></span>
+          <span class="ornament br"></span>
+
+          <div class="reveal">
+            <div class="reveal-mark">— De Drakenrol —</div>
+            <div class="reveal-line">Er is geen geheim ingrediënt.<br>Het ben jij.</div>
+          </div>
+
+          <div class="status" id="status">
+            <div class="status-mark">— De Drakenrol —</div>
+            <div class="status-msg" id="statusMsg">Camera wordt geopend…</div>
+            <button class="retry-btn" id="retryBtn" type="button" hidden>Opnieuw proberen</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cap">
+        <div class="cap-rod"></div>
+        <div class="knob left"></div>
+        <div class="knob right"></div>
+      </div>
+
+      <div class="hint">tik om te openen</div>
+    </div>
+  </div>
+
+<script>
+  (function () {
+    const scroll    = document.getElementById('scroll');
+    const video     = document.getElementById('video');
+    const statusMsg = document.getElementById('statusMsg');
+    const retryBtn  = document.getElementById('retryBtn');
+
+    let opened = false;
+
+    function setState(state, msg, showRetry) {
+      scroll.classList.remove('cam-pending', 'cam-on', 'cam-error', 'cam-insecure');
+      if (state) scroll.classList.add(state);
+      if (msg !== undefined) statusMsg.textContent = msg;
+      retryBtn.hidden = !showRetry;
+    }
+
+    function isSecure() {
+      // getUserMedia needs HTTPS (or localhost)
+      return window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    }
+
+    function requestCamera() {
+      if (!isSecure()) {
+        setState('cam-insecure',
+          'Deze pagina staat op http://. Camera werkt alleen via https://. Open hem opnieuw met https.',
+          false);
+        return;
+      }
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setState('cam-error', 'Deze browser ondersteunt geen camera.', false);
+        return;
+      }
+
+      setState('cam-pending', 'Camera wordt geopend…', false);
+
+      // Keep constraints simple: maximizes compatibility across iOS/Android/desktop.
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+        .catch(function () {
+          // Fallback: any camera at all
+          return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        })
+        .then(function (stream) {
+          video.srcObject = stream;
+          const playPromise = video.play();
+          if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(function () { /* iOS will resume on tap */ });
+          }
+          setState('cam-on');
+        })
+        .catch(function (err) {
+          let msg = 'Geen toegang tot de camera.';
+          if (err && err.name === 'NotAllowedError')      msg = 'Camera-toestemming geweigerd. Sta de camera toe en probeer opnieuw.';
+          else if (err && err.name === 'NotFoundError')   msg = 'Geen camera gevonden op dit apparaat.';
+          else if (err && err.name === 'NotReadableError')msg = 'De camera wordt al door een andere app gebruikt.';
+          setState('cam-error', msg, true);
+        });
+    }
+
+    function openScroll() {
+      if (opened) return;
+      opened = true;
+
+      // Trigger camera permission INSIDE the user gesture (critical on iOS).
+      requestCamera();
+
+      scroll.classList.remove('closed');
+      scroll.classList.add('opening');
+      // Small delay so the unroll feels deliberate
+      setTimeout(function () {
+        scroll.classList.remove('opening');
+        scroll.classList.add('open');
+      }, 80);
+    }
+
+    // Pointer events cover both touch + mouse without firing twice
+    if (window.PointerEvent) {
+      scroll.addEventListener('pointerup', function (e) {
+        if (e.target === retryBtn) return;
+        openScroll();
+      });
+    } else {
+      scroll.addEventListener('click', function (e) {
+        if (e.target === retryBtn) return;
+        openScroll();
+      });
+    }
+
+    retryBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      requestCamera();
+    });
+  })();
+</script>
+</body>
+</html>
